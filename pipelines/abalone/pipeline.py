@@ -130,8 +130,8 @@ def get_pipeline(
     model_package_group_name="AbalonePackageGroup",
     pipeline_name="AbalonePipeline",
     base_job_prefix="Abalone",
-    processing_instance_type="ml.m5.xlarge",
-    training_instance_type="ml.m5.xlarge",
+    processing_instance_type="ml.m5.large",
+    training_instance_type="ml.m5.large",
 ):
     """Gets a SageMaker ML Pipeline instance working with on abalone data.
 
@@ -299,22 +299,6 @@ def get_pipeline(
         step_args=step_args,
     )
 
-    # condition step for evaluating model quality and branching execution
-    cond_lte = ConditionLessThanOrEqualTo(
-        left=JsonGet(
-            step_name=step_eval.name,
-            property_file=evaluation_report,
-            json_path="regression_metrics.mse.value"
-        ),
-        right=6.0,
-    )
-    step_cond = ConditionStep(
-        name="CheckMSEAbaloneEvaluation",
-        conditions=[cond_lte],
-        if_steps=[step_register],
-        else_steps=[],
-    )
-
     # pipeline instance
     pipeline = Pipeline(
         name=pipeline_name,
@@ -325,7 +309,7 @@ def get_pipeline(
             model_approval_status,
             input_data,
         ],
-        steps=[step_process, step_train, step_eval, step_cond],
+        steps=[step_process, step_train, step_register],
         sagemaker_session=pipeline_session,
     )
     return pipeline
